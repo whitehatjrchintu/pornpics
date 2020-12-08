@@ -5,8 +5,7 @@ With this script you can download all images of any pornstar from [pornpics](htt
 ## Prerequisites:-
 
 1. bs4
-2. urllib.request
-3. requests
+2. requests
 
 ## How to use?
 ### Step 1:
