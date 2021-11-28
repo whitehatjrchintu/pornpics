@@ -63,7 +63,6 @@ def main():
     count = len(open(name + "'s image_links.txt").readlines())
     for i in range(0, count):
         with open(name + "'s image_links.txt",'r') as f:
-          #urls = f.read().split('\n')[i]
           urls = f.read().split('\n')
 
     with Pool(number_of_workers) as pool:
