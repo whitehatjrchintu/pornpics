@@ -1,5 +1,9 @@
+from multiprocessing import Pool
 from bs4 import BeautifulSoup
+import urllib.request
+import traceback
 import requests
+import shutil
 import time
 
 name = input("Enter name :: ")
@@ -23,9 +27,9 @@ def getting_image_urls():
     with open(name + "'s post_links.txt", 'r') as f:
         for line in f:
             time.sleep(2)
-			headers = {"Connection": "close", "DNT": "1", "Upgrade-Insecure-Requests": "1", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", "Sec-Fetch-Site": "none", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-User": "?1", "Sec-Fetch-Dest": "document", "Accept-Encoding": "gzip, deflatre", "Accept-Language": "en-US,en;q=0.9,hi;q=0.8"}
-			cookies = {"cookie" : "__ae_uid_sess_id=b162cbb3-9e86-4a55-ac81-f1b1cccdd6e0; PP_UVM=1; _stat=2598133695.1528214785.23479322.3739817806; _ga=GA1.2.1272764643.1603974465; _gid=GA1.2.1206331922.1605948774"}
-			payload = requests.get(line.strip(), headers=headers, cookies=cookies)
+            headers = {"Connection": "close", "DNT": "1", "Upgrade-Insecure-Requests": "1", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", "Sec-Fetch-Site": "none", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-User": "?1", "Sec-Fetch-Dest": "document", "Accept-Encoding": "gzip, deflatre", "Accept-Language": "en-US,en;q=0.9,hi;q=0.8"}
+            cookies = {"cookie" : "__ae_uid_sess_id=b162cbb3-9e86-4a55-ac81-f1b1cccdd6e0; PP_UVM=1; _stat=2598133695.1528214785.23479322.3739817806; _ga=GA1.2.1272764643.1603974465; _gid=GA1.2.1206331922.1605948774"}
+            payload = requests.get(line.strip(), headers=headers, cookies=cookies)
             soup = BeautifulSoup(payload.content,'html.parser')
             for images in soup.find_all("a", attrs = {'class' : 'rel-link'}):
                 imgg = images.get("href")
@@ -39,23 +43,35 @@ def getting_image_urls():
     #counting images
     with open(name + "'s image_links.txt", 'r') as f:
         data = f.read()
-        line = data.splitlines()
-        print('Total images are ::', len(line))
+        global linee
+        linee = data.splitlines()
+        print('Total images are ::', len(linee))
 
+def download(url):
+    try:
+        response = requests.get(url, stream=True)
+        filename = url.split("/")[-1]
+        with open(filename, 'wb') as out_file:
+            shutil.copyfileobj(response.raw, out_file)
+        del response
+    except Exception:
+        pass
 
-def downloading_images():
+def main():
+    print("Downloading" ,len(linee), "images. Please wait.")
+    number_of_workers = 4
     count = len(open(name + "'s image_links.txt").readlines())
     for i in range(0, count):
         with open(name + "'s image_links.txt",'r') as f:
-            url = f.read().split('\n')[i]
-            url1 = url.rsplit('/',1)[-1]
-			headers = {"Connection": "close", "DNT": "1", "Upgrade-Insecure-Requests": "1", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", "Sec-Fetch-Site": "none", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-User": "?1", "Sec-Fetch-Dest": "document", "Accept-Encoding": "gzip, deflatre", "Accept-Language": "en-US,en;q=0.9,hi;q=0.8"}
-			cookies = {"cookie" : "__ae_uid_sess_id=b162cbb3-9e86-4a55-ac81-f1b1cccdd6e0; PP_UVM=1; _stat=2598133695.1528214785.23479322.3739817806; _ga=GA1.2.1272764643.1603974465; _gid=GA1.2.1206331922.1605948774"}
-			r = requests.get(url, headers=headers, cookies=cookies)
-            with open(url1,'wb') as f:
-                f.write(r.content)
-    print("Images Downloaded.")
+          #urls = f.read().split('\n')[i]
+          urls = f.read().split('\n')
 
-getting_post_urls()
-getting_image_urls()
-downloading_images()
+    with Pool(number_of_workers) as pool:
+        pool.map(download, urls)
+
+    print("Done.")
+
+if __name__ == "__main__":
+    getting_post_urls()
+    getting_image_urls()
+    main()
